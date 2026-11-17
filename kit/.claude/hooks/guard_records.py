@@ -14,7 +14,8 @@ import json
 import re
 import sys
 
-PROTECTED = re.compile(r"(CHANGELOG|AGENT_QUERY_LOG)\.md", re.I)
+# Not part of a longer name: OLD_CHANGELOG.md and CHANGELOG.md.bak are other files.
+PROTECTED = re.compile(r"(?<![\w.-])(CHANGELOG|AGENT_QUERY_LOG)\.md(?![\w-])", re.I)
 SCRIPT = re.compile(r"^\s*(python3?\s+)?(\./)?scripts/(changelog|agent_query_log)\.py\b")
 GIT_OK = re.compile(r"^\s*git\s+(add|commit|rm|restore|status|stash)\b")
 SEGMENT_SPLIT = re.compile(r"&&|\|\||;|\||\n")

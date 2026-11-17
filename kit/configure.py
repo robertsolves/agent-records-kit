@@ -8,7 +8,7 @@ TOOLS is a comma list of claude, codex, gemini, opencode, kilo, cursor. What eac
   every agent  AGENTS.md section (the rule), the scripts, the skills in .agents/skills
   claude       .claude/settings.json: deny rules, plus hooks that log prompts, block reads and check at Stop
   codex        .codex/config.toml: hooks that log prompts and block reads (review them once with /hooks)
-  gemini       .gemini/settings.json hooks, an ignore file, and GEMINI.md importing AGENTS.md
+  gemini       .gemini/settings.json: hooks and context.fileName including AGENTS.md, plus an ignore file
   opencode     opencode.json: deny rules for the two files
   kilo         kilo.json: deny rules for the two files, and .kilocodeignore
   cursor       .cursorignore
@@ -144,7 +144,12 @@ def gemini():
             groups.append({"matcher": matcher, "hooks": [{"type": "command", "command": command}]})
     write_json(path, data)
     say("merged", ".gemini/settings.json (2 hooks)")
-    import_file("GEMINI.md")
+    # Gemini reads GEMINI.md by default; this makes it read AGENTS.md too, without an extra file.
+    names = data.setdefault("context", {}).get("fileName", ["GEMINI.md"])
+    names = [names] if isinstance(names, str) else names
+    if "AGENTS.md" not in names:
+        data["context"]["fileName"] = names + ["AGENTS.md"]
+        write_json(path, data)
     for name in PROTECTED:
         ensure_line(".geminiignore", name)
 
