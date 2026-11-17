@@ -17,6 +17,15 @@ def root() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
+def configured(key: str, default: str) -> Path:
+    """Where a records file lives: `default` at the project root, or the path under `key` in .agents/records.json."""
+    try:
+        value = json.loads((root() / ".agents" / "records.json").read_text()).get(key)
+    except (OSError, ValueError):
+        value = None
+    return root() / (value or default)
+
+
 def die(message: str, code: int = 2):
     print(message, file=sys.stderr)
     sys.exit(code)

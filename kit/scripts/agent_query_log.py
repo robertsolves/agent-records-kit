@@ -16,16 +16,17 @@ import sys
 from datetime import datetime
 
 sys.dont_write_bytecode = True  # keep __pycache__ out of the project
-from _records import (LIMIT_HELP, DEFAULT_LIMIT, die, in_range, locked_append, one_line,
-                      parse_range, print_entries, read_text, root, today_now)
+from _records import (LIMIT_HELP, DEFAULT_LIMIT, configured, die, in_range, locked_append, one_line,
+                      parse_range, print_entries, read_text, today_now)
 
-FILE = root() / "AGENT_QUERY_LOG.md"
+FILE = configured("query_log", "AGENT_QUERY_LOG.md")
 HEADER = (
     "# Agent query log\n\n"
     "Every request made to an agent, oldest first. Written and read only by "
     "`scripts/agent_query_log.py`. Don't open this file.\n\n---\n\n"
 )
-LINE = re.compile(r"^- (\d{4}-\d\d-\d\d \d\d:\d\d:\d\d): (.*)$")
+# `- 2026-11-17 20:15:12: text`, and the older `- 2026-11-17 20:15 | text`
+LINE = re.compile(r"^- (\d{4}-\d\d-\d\d \d\d:\d\d(?::\d\d)?)(?: \||:) (.*)$")
 DUPLICATE_WINDOW_SECONDS = 120
 
 
@@ -41,7 +42,7 @@ def write(query) -> bool:
         for raw in reversed(existing.splitlines()):
             m = LINE.match(raw)
             if m:
-                seen = datetime.strptime(m.group(1), "%Y-%m-%d %H:%M:%S")
+                seen = datetime.fromisoformat(m.group(1))
                 close = (now.replace(tzinfo=None) - seen).total_seconds() < DUPLICATE_WINDOW_SECONDS
                 if close and m.group(2) == query:
                     return ""
@@ -58,7 +59,7 @@ def read(range_text, limit):
     entries = []
     for raw in read_text(FILE).splitlines():
         m = LINE.match(raw)
-        if m and in_range(datetime.strptime(m.group(1), "%Y-%m-%d %H:%M:%S").date(), start, end):
+        if m and in_range(datetime.fromisoformat(m.group(1)).date(), start, end):
             entries.append({"timestamp": m.group(1), "query": m.group(2)})
     print_entries(entries, limit)
 
