@@ -28,6 +28,7 @@ Usage: install.sh [options]
                   Agents not listed (Antigravity, Copilot, Windsurf, Freebuff...) read the
                   AGENTS.md rule, which every install adds.
   --private       keep AGENT_QUERY_LOG.md out of git (prompts can contain secrets)
+  --only SKILLS   comma list of skills to install: record-keeping, agent-history (default: both)
   --no-agents-md  leave AGENTS.md alone
   --uninstall     remove the scripts, hooks, skills and config entries this installed
                   (your record files stay)
@@ -36,7 +37,7 @@ Usage: install.sh [options]
 EOF
 }
 
-project="" tools="auto" private=0 dry=0 agents_md=1 uninstall=0
+project="" tools="auto" only="" private=0 dry=0 agents_md=1 uninstall=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --project) project="${2:?--project needs a directory}"; shift ;;
@@ -44,7 +45,7 @@ while [ $# -gt 0 ]; do
     --private) private=1 ;;
     --no-agents-md) agents_md=0 ;;
     --uninstall) uninstall=1 ;;
-    --only) shift ;;     # accepted so kit.sh can pass the same options to every kit
+    --only) only="${2:?--only needs a list}"; shift ;;
     --copy|--force) ;;
     --dry-run) dry=1 ;;
     -h|--help) usage; exit 0 ;;
@@ -87,6 +88,7 @@ if [ -f "$options_file" ] && [ "$uninstall" -eq 0 ]; then
     saved="$(sed -n 's/^tools=//p' "$options_file")"
     [ -n "$saved" ] && tools="$saved"
   fi
+  [ -z "$only" ] && only="$(sed -n 's/^only=//p' "$options_file")"
   grep -qx 'private=1' "$options_file" && private=1
   grep -qx 'agents_md=0' "$options_file" && agents_md=0
 fi
@@ -113,6 +115,22 @@ done
 
 say() { printf '  %-9s %s\n' "$1" "$2"; }
 kept=()
+skills="record-keeping agent-history"
+# kit.sh passes one --only list to every kit; use it only when it names one of this kit's skills.
+if [ -n "$only" ]; then
+  picked=""
+  for s in $skills; do case ",$only," in *",$s,"*) picked="$picked $s" ;; esac; done
+  [ -n "$picked" ] && skills="${picked# }"
+fi
+records_path() { # $1 = key in .agents/records.json, $2 = default path
+  python3 - "$project/.agents/records.json" "$1" "$2" <<'PY' 2>/dev/null || echo "$2"
+import json, sys
+try:
+    print(json.load(open(sys.argv[1])).get(sys.argv[2]) or sys.argv[3])
+except Exception:
+    print(sys.argv[3])
+PY
+}
 owned=()   # paths this kit owns, written to the manifest so --uninstall can remove them
 
 if [ "$uninstall" -eq 1 ]; then
@@ -153,7 +171,7 @@ done
 if [ "$dry" -eq 0 ]; then chmod +x "$project"/.claude/hooks/* "$project"/scripts/changelog.py "$project"/scripts/agent_query_log.py; fi
 
 # Skills live in .agents/skills (Codex, OpenCode, Kilo and Gemini read it) and are linked for Claude Code.
-for skill in record-keeping agent-history; do
+for skill in $skills; do
   if [ "$dry" -eq 0 ]; then
     rm -rf "$project/.agents/skills/$skill"
     mkdir -p "$project/.agents/skills" "$project/.claude/skills"
@@ -165,14 +183,17 @@ for skill in record-keeping agent-history; do
   say "wrote" ".agents/skills/$skill (linked into .claude/skills)"
 done
 
-for f in BUGS TODO CHANGELOG AGENT_QUERY_LOG; do seed "templates/$f.md" "$f.md"; done
+seed templates/BUGS.md BUGS.md
+seed templates/TODO.md TODO.md
+seed templates/CHANGELOG.md "$(records_path changelog CHANGELOG.md)"
+seed templates/AGENT_QUERY_LOG.md "$(records_path query_log AGENT_QUERY_LOG.md)"
 
 python3 "$src/configure.py" "$project" "$src" "$tools" "$dry" "$private" install "$agents_md"
 
 if [ "$dry" -eq 0 ]; then
   mkdir -p "$manifest_dir"
   printf '%s\n' "${owned[@]}" > "$manifest"
-  { echo "tools=$tools"; echo "private=$private"; echo "agents_md=$agents_md"; } > "$options_file"
+  { echo "tools=$tools"; echo "only=$only"; echo "private=$private"; echo "agents_md=$agents_md"; } > "$options_file"
 fi
 
 echo

@@ -16,6 +16,6 @@ Or with the other kits:
 curl -fsSL https://raw.githubusercontent.com/robertsolves/agent-commands/main/kit.sh | bash -s -- add records
 ```
 
-Options: `--tools claude,codex,gemini,opencode,kilo,cursor` (default: detected), `--private` (keep the query log out of git), `--dry-run`, `--uninstall`.
+Options: `--only record-keeping,agent-history` (default: both), `--tools claude,codex,gemini,opencode,kilo,cursor` (default: detected), `--private` (keep the query log out of git), `--dry-run`, `--uninstall`.
 
 Needs `python3`. Codex ignores project hooks until you trust the project and review them with `/hooks`.
