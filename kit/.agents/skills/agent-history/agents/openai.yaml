@@ -1,0 +1,4 @@
+interface:
+  display_name: "agent-history"
+  short_description: "Read the changelog and the user's earlier requests by date, without opening the files"
+  default_prompt: "Use $agent-history to find what changed or what was asked in a date range."
