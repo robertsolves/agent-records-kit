@@ -18,4 +18,19 @@ curl -fsSL https://raw.githubusercontent.com/robertsolves/agent-commands/main/ki
 
 Options: `--only record-keeping,agent-history` (default: both), `--tools claude,codex,gemini,opencode,kilo,cursor` (default: detected), `--private` (keep the query log out of git), `--dry-run`, `--uninstall`.
 
-Needs `python3`. Codex ignores project hooks until you trust the project and review them with `/hooks`.
+Needs `python3`.
+
+## Codex hooks
+
+Codex ignores a project's hooks until you turn them on. The kit's two hooks log every request and block reads of `CHANGELOG.md` and `AGENT_QUERY_LOG.md`. Without them, Codex only follows the rule in `AGENTS.md`.
+
+1. Open the project in Codex and trust it when asked.
+2. Run `/hooks` and approve the two hooks (`PreToolUse` and `UserPromptSubmit`).
+
+Codex asks again if a hook file changes.
+
+## Tests
+
+```sh
+python3 -m unittest discover tests
+```
