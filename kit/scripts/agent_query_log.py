@@ -16,10 +16,10 @@ import sys
 from datetime import datetime
 
 sys.dont_write_bytecode = True  # keep __pycache__ out of the project
-from _records import (LIMIT_HELP, DEFAULT_LIMIT, configured, die, in_range, locked_append, one_line,
-                      parse_range, print_entries, read_text, today_now)
+from _records import (LIMIT_HELP, DEFAULT_LIMIT, die, in_range, locked_append, one_line,
+                      parse_range, print_entries, read_text, root, today_now)
 
-FILE = configured("query_log", "AGENT_QUERY_LOG.md")
+FILE = root() / "AGENT_QUERY_LOG.md"
 HEADER = (
     "# Agent query log\n\n"
     "Every request made to an agent, oldest first. Written and read only by "

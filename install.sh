@@ -122,15 +122,6 @@ if [ -n "$only" ]; then
   for s in $skills; do case ",$only," in *",$s,"*) picked="$picked $s" ;; esac; done
   [ -n "$picked" ] && skills="${picked# }"
 fi
-records_path() { # $1 = key in .agents/records.json, $2 = default path
-  python3 - "$project/.agents/records.json" "$1" "$2" <<'PY' 2>/dev/null || echo "$2"
-import json, sys
-try:
-    print(json.load(open(sys.argv[1])).get(sys.argv[2]) or sys.argv[3])
-except Exception:
-    print(sys.argv[3])
-PY
-}
 owned=()   # paths this kit owns, written to the manifest so --uninstall can remove them
 
 if [ "$uninstall" -eq 1 ]; then
@@ -185,8 +176,8 @@ done
 
 seed templates/BUGS.md BUGS.md
 seed templates/TODO.md TODO.md
-seed templates/CHANGELOG.md "$(records_path changelog CHANGELOG.md)"
-seed templates/AGENT_QUERY_LOG.md "$(records_path query_log AGENT_QUERY_LOG.md)"
+seed templates/CHANGELOG.md CHANGELOG.md
+seed templates/AGENT_QUERY_LOG.md AGENT_QUERY_LOG.md
 
 python3 "$src/configure.py" "$project" "$src" "$tools" "$dry" "$private" install "$agents_md"
 

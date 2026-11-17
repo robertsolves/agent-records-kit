@@ -15,10 +15,10 @@ import sys
 from datetime import date
 
 sys.dont_write_bytecode = True  # keep __pycache__ out of the project
-from _records import (LIMIT_HELP, DEFAULT_LIMIT, configured, die, in_range, locked_append, one_line,
+from _records import (LIMIT_HELP, DEFAULT_LIMIT, die, in_range, locked_append, one_line,
                       parse_range, print_entries, read_text, root, today_now)
 
-FILE = configured("changelog", "CHANGELOG.md")
+FILE = root() / "CHANGELOG.md"
 HEADER = (
     "# Changelog\n\n"
     "Written and read only by `scripts/changelog.py`. Don't open this file.\n\n---\n"
