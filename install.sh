@@ -28,7 +28,7 @@ Usage: install.sh [options]
                   Agents not listed (Antigravity, Copilot, Windsurf, Freebuff...) read the
                   AGENTS.md rule, which every install adds.
   --private       keep AGENT_QUERY_LOG.md out of git (prompts can contain secrets)
-  --only SKILLS   comma list of skills to install: record-keeping, agent-history (default: both)
+  --only SKILLS   comma list of skills to install: record-keeping, agent-history, todo-triage (default: all)
   --no-agents-md  leave AGENTS.md alone
   --uninstall     remove the scripts, hooks, skills and config entries this installed
                   (your record files stay)
@@ -115,7 +115,7 @@ done
 
 say() { printf '  %-9s %s\n' "$1" "$2"; }
 kept=()
-skills="record-keeping agent-history"
+skills="record-keeping agent-history todo-triage"
 # kit.sh passes one --only list to every kit; use it only when it names one of this kit's skills.
 if [ -n "$only" ]; then
   picked=""

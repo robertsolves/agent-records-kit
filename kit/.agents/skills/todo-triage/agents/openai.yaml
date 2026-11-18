@@ -1,0 +1,4 @@
+interface:
+  display_name: "todo-triage"
+  short_description: "Walk TODO.md with the user in multiple-choice questions, then update it"
+  default_prompt: "Use $todo-triage to go through TODO.md with me and decide what to do next."

@@ -16,7 +16,7 @@ Or with the other kits:
 curl -fsSL https://raw.githubusercontent.com/robertsolves/agent-commands/main/kit.sh | bash -s -- add records
 ```
 
-Options: `--only record-keeping,agent-history` (default: both), `--tools claude,codex,gemini,opencode,kilo,cursor` (default: detected), `--private` (keep the query log out of git), `--dry-run`, `--uninstall`.
+Options: `--only record-keeping,agent-history,todo-triage` (default: all), `--tools claude,codex,gemini,opencode,kilo,cursor` (default: detected), `--private` (keep the query log out of git), `--dry-run`, `--uninstall`.
 
 Needs `python3`.
 

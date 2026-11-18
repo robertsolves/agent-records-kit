@@ -241,7 +241,7 @@ class Installer(Project):
         self.assertEqual(skills, ["agent-history"])
         self.install("--only", "find-bandaids")
         skills = sorted(p.name for p in (self.project / ".agents" / "skills").iterdir())
-        self.assertEqual(skills, ["agent-history", "record-keeping"])
+        self.assertEqual(skills, ["agent-history", "record-keeping", "todo-triage"])
 
     def test_private_keeps_the_query_log_out_of_git(self):
         self.install("--private")
