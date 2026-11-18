@@ -30,7 +30,7 @@ A discrete change is one fix, feature or behaviour change. Formatting is not one
 - Write one line per entry, for agents: what changed and why, naming files or symbols. Don't restate the diff; the script adds the commit hash.
 - Commit before you log, or the hash is wrong.
 - Never edit an old entry. Never check for duplicates.
-- A fixed bug: delete its `BUGS.md` entry in the same change.
+- A fixed bug: delete its `BUGS.md` entry in the same change. A finished task: delete its `TODO.md` entry; never tick it or keep a done list.
 
 ### Query log
 

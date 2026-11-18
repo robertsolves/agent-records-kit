@@ -30,7 +30,8 @@ The user decides; you prepare the choices and write the result. Entry formats an
    Check a "Done already" or "Stale" guess with one command before you ask about it.
 
 3. **Ask in rounds** with your multiple-choice question tool (`AskUserQuestion` in Claude Code; elsewhere, a numbered list the user answers by number). Up to 4 questions a round, the most valuable first: done/stale confirmations, then decisions, then splits, then priority. Each question:
-   - names the item in plain words and its `TODO.md` line;
+   - is written in simple, basic English: short sentences, everyday words, no code names or jargon unless the user needs them to choose; say what the item is about and why it matters before any file or symbol;
+   - names the item and its `TODO.md` line;
    - has 2 to 4 options, the recommended one **first**, labelled `(Recommended)`, with a one-line reason;
    - offers concrete actions: close it, delete it, split into N items (name them), raise or lower its priority, keep, or the decision's options.
 
@@ -40,7 +41,7 @@ The user decides; you prepare the choices and write the result. Entry formats an
 
 5. **Apply the answers to `TODO.md`:**
    - Keep the file's own format, headers and any ids or markers in comments.
-   - Close done items as the `record-keeping` skill says (tick `- [x]`, or remove the entry); delete items the user called stale.
+   - Delete done items, ticked ones included, and items the user called stale; never tick an item (the `record-keeping` skill).
    - A split replaces one item with its parts in the same place.
    - A decision that changes a requirement goes in the doc that owns it, and the task links there instead of restating it.
    - Reword only what the user changed.

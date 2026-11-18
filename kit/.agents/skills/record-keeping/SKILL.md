@@ -45,7 +45,7 @@ Fill every field. Each entry cites evidence as `path:line` and gives today's dat
 ## Step 5: Close what you resolve
 
 - **You fixed a bug:** delete its `BUGS.md` entry and log it with `scripts/changelog.py --w` in the same change. Every bug fix gets an entry, listed or not.
-- **You did a TODO:** delete its `TODO.md` entry. Log it with `scripts/changelog.py --w` if behaviour, UI, the API, the schema or deployment changed.
+- **You did a TODO:** delete its `TODO.md` entry. Never tick it (`- [x]`) or move it to a done list; git and the changelog keep the history. Log it with `scripts/changelog.py --w` if behaviour, UI, the API, the schema or deployment changed.
 - **You decided not to fix a bug:** move it to `BUGS.md`'s **Accepted limitations** with the reason and what would change the decision.
 - **It was a false alarm:** delete the entry.
 - **A TODO turned out to be a defect:** move it to `BUGS.md`. Don't copy it.
