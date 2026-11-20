@@ -11,7 +11,7 @@ When you notice a defect you are not fixing, add it to `BUGS.md` now. When you n
 ### Reading
 
 - Never open `BUGS.md` or `TODO.md` whole. Search: `rg -n --max-count 5 '<file or symbol>' BUGS.md TODO.md`.
-- Never read, search, tail or edit `CHANGELOG.md` or `AGENT_QUERY_LOG.md`, and don't ask permission: the request is denied. Read them through the scripts, which print JSON for a date range (`START:END` as `YYYY-MM-DD`, either side may be empty):
+- Never name `CHANGELOG.md` or `AGENT_QUERY_LOG.md` in any command: not to read, search, diff, stage or commit them. Never ask the user about them either; the answer is always no. Read them through the scripts, which print JSON for a date range (`START:END` as `YYYY-MM-DD`, either side may be empty):
 
   ```sh
   python3 scripts/changelog.py --r 2026-11-01:2026-11-17
@@ -25,10 +25,11 @@ When you notice a defect you are not fixing, add it to `BUGS.md` now. When you n
 A discrete change is one fix, feature or behaviour change. Formatting is not one.
 
 1. Commit it with a short, plain message.
-2. Log it: `python3 scripts/changelog.py --w "<entry>"`. Repeat `--w` for several entries.
+2. Log it: `python3 scripts/changelog.py --w "<entry>"`. Repeat `--w` for several entries. The script commits the entry itself; leave the changelog out of your own commits.
 
 - Write one line per entry, for agents: what changed and why, naming files or symbols. Don't restate the diff; the script adds the commit hash.
 - Commit before you log, or the hash is wrong.
+- If the script says the commit failed, tell the user what it printed. Don't commit the file yourself.
 - Never edit an old entry. Never check for duplicates.
 - A fixed bug: delete its `BUGS.md` entry in the same change. A finished task: delete its `TODO.md` entry; never tick it or keep a done list.
 

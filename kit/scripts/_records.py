@@ -62,6 +62,25 @@ def locked_append(path: Path, header: str, build):
         return existing
 
 
+def locked_rewrite(path: Path, header: str, build, then=None):
+    """Replaces the file's text with build(existing_text) under a lock, starting from header when it is empty.
+
+    then(), when given, runs after the write and before the lock is let go, so two writers never interleave it."""
+    path.touch()
+    with open(path, "r+", encoding="utf-8") as f:
+        if fcntl:
+            fcntl.flock(f, fcntl.LOCK_EX)
+        existing = f.read()
+        if not existing.strip():
+            existing = header
+        f.seek(0)
+        f.truncate()
+        f.write(build(existing))
+        f.flush()
+        if then:
+            then()
+
+
 def read_text(path: Path) -> str:
     try:
         return path.read_text(encoding="utf-8")

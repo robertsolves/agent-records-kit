@@ -52,10 +52,10 @@ Fill every field. Each entry cites evidence as `path:line` and gives today's dat
 
 ## CHANGELOG.md and AGENT_QUERY_LOG.md are script-only
 
-Never open either file: not whole, not a line range, not a search, not a check for duplicates. They only grow, and every read is paid for again on every later turn. A hook blocks the attempt, so don't ask for permission either. Use the scripts:
+Never name either file in a command: not whole, not a line range, not a search, not a diff, not `git add`. They only grow, and every read is paid for again on every later turn. A hook blocks the attempt, so don't ask the user for permission either. Use the scripts:
 
 ```sh
-python3 scripts/changelog.py --w "what changed and why"     # after committing each discrete change
+python3 scripts/changelog.py --w "what changed and why"     # after committing each discrete change; it commits the entry itself
 python3 scripts/changelog.py --r 2026-11-01:2026-11-17       # what changed, as JSON, with commit hashes
 ```
 

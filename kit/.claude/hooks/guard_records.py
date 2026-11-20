@@ -3,12 +3,17 @@
 
 Both files only grow, and one read of them costs thousands of tokens on every
 later turn. Agents go through scripts/changelog.py and scripts/agent_query_log.py
-instead. Any tool call that names either file is refused (exit 2, the message
-goes back to the agent) unless it runs one of those scripts or stages or commits
-the file with git. A call that names neither file passes untouched.
+instead; changelog.py commits the files itself, so not even git needs them named.
+Any tool call that names either file is refused (exit 2, the message goes back to
+the agent, and the user is never asked) unless it runs one of those scripts. A
+call that names neither file passes untouched.
 
 The settings.json deny rules catch the common commands; this catches the rest
 (rg, python -c, Edit, Write, a Grep or Glob aimed at the file).
+
+For every tool except Bash only the fields that name a file are checked. Docs and
+skills mention the two files all the time, and an Edit whose text merely says
+"CHANGELOG.md" must still go through.
 """
 import json
 import re
@@ -18,31 +23,32 @@ import sys
 # A trailing full stop is fine ("cat CHANGELOG.md."); a dot and a word character is an extension.
 PROTECTED = re.compile(r"(?<![\w.-])(CHANGELOG|AGENT_QUERY_LOG)\.md(?![\w-]|\.\w)", re.I)
 SCRIPT = re.compile(r"^\s*(python3?\s+)?(\./)?scripts/(changelog|agent_query_log)\.py\b")
-GIT_OK = re.compile(r"^\s*git\s+(add|commit|rm|restore|status|stash)\b")
 SEGMENT_SPLIT = re.compile(r"&&|\|\||;|\||\n")
+# The tool_input fields that name a file or a folder. Glob's `pattern` is a path glob; Grep's is a regex over contents.
+PATH_FIELDS = ("file_path", "path", "notebook_path", "glob")
 
 MESSAGE = (
     "Blocked: CHANGELOG.md and AGENT_QUERY_LOG.md are never read or edited directly; they only grow and "
     "reading them wastes your context. Use `python3 scripts/changelog.py --w \"entry\"` or `--r START:END`, "
-    "and `python3 scripts/agent_query_log.py --w \"query\"` or `--r START:END`."
+    "and `python3 scripts/agent_query_log.py --w \"query\"` or `--r START:END`. changelog.py commits the files "
+    "itself: never stage, commit or diff them by name, and never ask the user about them."
 )
 
 
-def strings(value):
-    if isinstance(value, str):
-        yield value
-    elif isinstance(value, dict):
-        for item in value.values():
-            yield from strings(item)
-    elif isinstance(value, list):
-        for item in value:
-            yield from strings(item)
+def named_paths(tool_name: str, tool_input: dict):
+    """The strings in a non-Bash tool call that point at a file."""
+    for field in PATH_FIELDS:
+        value = tool_input.get(field)
+        if isinstance(value, str):
+            yield value
+    if tool_name == "Glob" and isinstance(tool_input.get("pattern"), str):
+        yield tool_input["pattern"]
 
 
 def bash_allowed(command: str) -> bool:
-    """Every part of the command that names a protected file must be a script call or a git staging call."""
+    """Every part of the command that names a protected file must be a call to one of the scripts."""
     for part in SEGMENT_SPLIT.split(command):
-        if PROTECTED.search(part) and not (SCRIPT.match(part) or GIT_OK.match(part)):
+        if PROTECTED.search(part) and not SCRIPT.match(part):
             return False
     return True
 
@@ -56,7 +62,7 @@ def main():
     if call.get("tool_name") == "Bash":
         if bash_allowed(tool_input.get("command", "")):
             return 0
-    elif not any(PROTECTED.search(s) for s in strings(tool_input)):
+    elif not any(PROTECTED.search(s) for s in named_paths(call.get("tool_name", ""), tool_input)):
         return 0
     print(MESSAGE, file=sys.stderr)
     return 2

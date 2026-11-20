@@ -6,7 +6,8 @@
 TOOLS is a comma list of claude, codex, gemini, opencode, kilo, cursor. What each one gets:
 
   every agent  AGENTS.md section (the rule), the scripts, the skills in .agents/skills
-  claude       .claude/settings.json: deny rules, plus hooks that log prompts, block reads and check at Stop
+  claude       .claude/settings.json: deny rules, allow rules for the scripts, no ask rules (here or in
+               settings.local.json), plus hooks that log prompts, block reads and check at Stop
   codex        .codex/config.toml: hooks that log prompts and block reads (review them once with /hooks)
   gemini       .gemini/settings.json: hooks and context.fileName including AGENTS.md, plus an ignore file
   opencode     opencode.json: deny rules for the two files
@@ -29,6 +30,9 @@ with_agents_md = (sys.argv[7] if len(sys.argv) > 7 else "1") == "1"
 
 PROTECTED = ("CHANGELOG.md", "AGENT_QUERY_LOG.md")
 READ_COMMANDS = ("cat", "head", "tail", "less", "more", "sed", "awk", "grep", "rg", "bat", "git show", "git diff", "git log -p")
+# The scripts are the only way in, so running them never waits on a permission prompt.
+SCRIPTS = ("scripts/changelog.py", "scripts/agent_query_log.py")
+ALLOW = tuple(f"Bash(python3 {s} *)" for s in SCRIPTS)
 
 # Codex and Gemini start hooks from varying folders, so the project root comes from git.
 ROOT = '"$(git rev-parse --show-toplevel)"'
@@ -85,6 +89,23 @@ def import_file(name: str):
         print(f"  note      {existing[0].name} doesn't import AGENTS.md; add the line @AGENTS.md so the records rules reach it", file=sys.stderr)
 
 
+def names_ours(rule: str) -> bool:
+    return any(n.lower() in rule.lower() for n in PROTECTED + SCRIPTS)
+
+
+def drop_ask_rules(path: Path, data: dict) -> bool:
+    """Removes "ask" rules that name the record files or the scripts. An ask rule beats every allow rule and
+    bypassPermissions, so one of them turns each changelog write into a prompt the user has to answer."""
+    rules = data.get("permissions", {}).get("ask")
+    if not rules or not any(names_ours(r) for r in rules):
+        return False
+    rules[:] = [r for r in rules if not names_ours(r)]
+    if not rules:
+        del data["permissions"]["ask"]
+    say("removed", f"ask rules for the record files from {path.relative_to(project)}")
+    return True
+
+
 def claude():
     path = project / ".claude" / "settings.json"
     data = read_json(path)
@@ -94,6 +115,14 @@ def claude():
         deny += [f"Bash({cmd} *{name}*)" for cmd in READ_COMMANDS]
     rules = data.setdefault("permissions", {}).setdefault("deny", [])
     rules += [r for r in deny if r not in rules]
+    allow = data["permissions"].setdefault("allow", [])
+    allow += [r for r in ALLOW if r not in allow]
+    drop_ask_rules(path, data)
+    local = project / ".claude" / "settings.local.json"
+    if local.exists():
+        local_data = read_json(local)
+        if drop_ask_rules(local, local_data):
+            write_json(local, local_data)
     hooks = data.setdefault("hooks", {})
     wanted = {
         "PreToolUse": 'python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/guard_records.py"',
@@ -105,7 +134,7 @@ def claude():
         if not any(h.get("command") == command for g in groups for h in g.get("hooks", [])):
             groups.append({"hooks": [{"type": "command", "command": command}]})
     write_json(path, data)
-    say("merged", ".claude/settings.json (deny rules + 3 hooks)")
+    say("merged", ".claude/settings.json (deny rules, script allow rules, 3 hooks)")
 
 
 def codex():
@@ -170,9 +199,12 @@ def permission_deny(filename: str):
         current = current if isinstance(current, dict) else {}
         for pattern in patterns:
             current.setdefault(pattern, "deny")
+        if kind == "bash":
+            for script in SCRIPTS:
+                current.setdefault(f"python3 {script}*", "allow")
         permission[kind] = current
     write_json(path, data)
-    say("merged", f"{filename} (deny rules for {' and '.join(PROTECTED)})")
+    say("merged", f"{filename} (deny rules for {' and '.join(PROTECTED)}, allow rules for the scripts)")
 
 
 def pick_config(*names):
@@ -210,9 +242,12 @@ def uninstall():
                 del hooks[event]
         if not hooks:
             data.pop("hooks", None)
-        rules = data.get("permissions", {}).get("deny")
-        if rules is not None:
-            rules[:] = [r for r in rules if not any(n in r for n in PROTECTED)]
+        permissions = data.get("permissions", {})
+        for kind in ("deny", "allow"):
+            if kind in permissions:
+                permissions[kind] = [r for r in permissions[kind] if not names_ours(r)]
+        if permissions.get("allow") == []:
+            del permissions["allow"]
         write_json(path, data)
         say("cleaned", name)
     for name in ("opencode.json", "kilo.json"):
@@ -222,7 +257,7 @@ def uninstall():
         data = read_json(path)
         for kind, rules in data.get("permission", {}).items():
             if isinstance(rules, dict):
-                for pattern in [p for p in rules if any(n in p for n in PROTECTED)]:
+                for pattern in [p for p in rules if names_ours(p)]:
                     del rules[pattern]
         data["permission"] = {k: v for k, v in data.get("permission", {}).items() if v != {}}
         if not data["permission"]:
